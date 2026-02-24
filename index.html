@@ -59,7 +59,7 @@
     .note {
       font-size: 0.9em;
       color: #ccc;
-      margin: 10px 0;
+      margin: 10px 0 20px 0;
     }
     .note a {
       color: #ffcc00;
@@ -87,14 +87,14 @@
     <input id="birthPlace" placeholder="Deerfield Beach, FL" type="text" required />
 
     <div class="note">
-      Don't know your Moon or Rising sign? Use <a href="https://astrogold.io" target="_blank">Astro Gold</a> (very accurate) to find them, then paste here (optional).
+      Don't know your Moon or Rising sign? Use the accurate app <a href="https://astrogold.io" target="_blank">Astro Gold</a> to find them, then paste here (optional).
     </div>
 
     <label for="moonSign">Moon Sign (optional)</label>
     <input id="moonSign" placeholder="e.g. Virgo" type="text" />
 
     <label for="risingSign">Rising Sign / Ascendant (optional)</label>
-    <input id="risingSign" placeholder="e.g. Sagittarius" type="text" />
+    <input id="risingSign" placeholder="e.g. Sagittarius or Capricorn" type="text" />
 
     <button onclick="registerUser()">Register Me</button>
 
@@ -108,7 +108,7 @@
   </div>
 
   <script>
-    const API_URL = "https://astro-dating-api.onrender.com";  // ← your Render backend URL
+    const API_URL = "https://astro-dating-api.onrender.com";  // Your Render backend URL
 
     async function registerUser() {
       const name       = document.getElementById('name').value.trim();
