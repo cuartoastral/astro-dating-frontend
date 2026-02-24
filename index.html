@@ -25,13 +25,20 @@
       text-align: center;
       color: #ffcc00;
     }
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
     input, button {
       width: 100%;
       padding: 12px;
-      margin: 10px 0;
+      margin: 5px 0 15px 0;
       border-radius: 8px;
       border: none;
       font-size: 16px;
+      box-sizing: border-box;
     }
     button {
       background: #ff6b6b;
@@ -47,10 +54,16 @@
       padding: 15px;
       background: rgba(0,0,0,0.3);
       border-radius: 10px;
+      min-height: 80px;
     }
-    pre {
-      white-space: pre-wrap;
-      word-wrap: break-word;
+    .note {
+      font-size: 0.9em;
+      color: #ccc;
+      margin: 10px 0;
+    }
+    .note a {
+      color: #ffcc00;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -60,14 +73,34 @@
     <p>Enter your details to register and find cosmic matches!</p>
 
     <h2>Register</h2>
-    <input id="name" placeholder="Your Name" type="text" />
-    <input id="birthDate" placeholder="Birth Date (YYYY/MM/DD)" type="text" />
-    <input id="birthTime" placeholder="Birth Time (HH:MM)" type="text" />
-    <input id="birthPlace" placeholder="Birth Place (e.g. Deerfield Beach, FL)" type="text" />
+    
+    <label for="name">Your Name</label>
+    <input id="name" placeholder="Your Name" type="text" required />
+
+    <label for="birthDate">Birth Date (YYYY/MM/DD)</label>
+    <input id="birthDate" placeholder="1990/05/20" type="text" required />
+
+    <label for="birthTime">Birth Time (HH:MM, 24-hour format)</label>
+    <input id="birthTime" placeholder="14:30" type="text" required />
+
+    <label for="birthPlace">Birth Place (City, Country)</label>
+    <input id="birthPlace" placeholder="Deerfield Beach, FL" type="text" required />
+
+    <div class="note">
+      Don't know your Moon or Rising sign? Use <a href="https://astrogold.io" target="_blank">Astro Gold</a> (very accurate) to find them, then paste here (optional).
+    </div>
+
+    <label for="moonSign">Moon Sign (optional)</label>
+    <input id="moonSign" placeholder="e.g. Virgo" type="text" />
+
+    <label for="risingSign">Rising Sign / Ascendant (optional)</label>
+    <input id="risingSign" placeholder="e.g. Sagittarius" type="text" />
+
     <button onclick="registerUser()">Register Me</button>
 
     <h2>Find Matches</h2>
-    <input id="userId" placeholder="Your User ID (from register response)" type="number" />
+    <label for="userId">Your User ID (from register response)</label>
+    <input id="userId" placeholder="e.g. 1" type="number" required />
     <button onclick="getMatches()">Show My Matches</button>
 
     <div id="result"></div>
@@ -75,27 +108,29 @@
   </div>
 
   <script>
-    const API_URL = "https://astro-dating-api.onrender.com";  // ← your Render URL
+    const API_URL = "https://astro-dating-api.onrender.com";  // ← your Render backend URL
 
     async function registerUser() {
-      const name = document.getElementById('name').value.trim();
-      const birthDate = document.getElementById('birthDate').value.trim();
-      const birthTime = document.getElementById('birthTime').value.trim();
+      const name       = document.getElementById('name').value.trim();
+      const birthDate  = document.getElementById('birthDate').value.trim();
+      const birthTime  = document.getElementById('birthTime').value.trim();
       const birthPlace = document.getElementById('birthPlace').value.trim();
+      const moonSign   = document.getElementById('moonSign').value.trim() || 'Unknown';
+      const risingSign = document.getElementById('risingSign').value.trim() || 'Unknown';
 
       if (!name || !birthDate || !birthTime || !birthPlace) {
-        alert("Please fill all fields!");
+        alert("Please fill all required fields!");
         return;
       }
 
       const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = "Registering...";
+      resultDiv.innerHTML = "Registering... Please wait.";
 
       try {
         const response = await fetch(`${API_URL}/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, birthDate, birthTime, birthPlace })
+          body: JSON.stringify({ name, birthDate, birthTime, birthPlace, moonSign, risingSign })
         });
 
         const data = await response.json();
@@ -103,8 +138,9 @@
         if (response.ok) {
           resultDiv.innerHTML = `
             <strong>Success!</strong><br>
-            User ID: ${data.id}<br>
-            Signs: Sun=${data.signs.sun}, Moon=${data.signs.moon}, Rising=${data.signs.rising}
+            User ID: <strong>${data.id}</strong><br>
+            Signs: Sun=${data.signs.sun}, Moon=${data.signs.moon}, Rising=${data.signs.rising}<br>
+            <br>Copy your User ID above to find matches!
           `;
         } else {
           resultDiv.innerHTML = `Error: ${data.error || 'Unknown error'}`;
@@ -130,7 +166,7 @@
 
         if (response.ok) {
           if (data.matches.length === 0) {
-            matchesDiv.innerHTML = "<strong>No matches yet</strong> (register more users to see compatibility!)";
+            matchesDiv.innerHTML = "<strong>No matches yet</strong><br>Register more users to see compatibility!";
           } else {
             let html = "<strong>Your Matches:</strong><ul>";
             data.matches.forEach(m => {
