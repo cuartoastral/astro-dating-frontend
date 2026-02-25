@@ -47,86 +47,100 @@
     <div id="result"></div>
     <div id="matches"></div>
   </div>
+<script>
+  const API_URL = "https://astro-dating-api.onrender.com";
 
-  <script>
-    const API_URL = "https://astro-dating-api.onrender.com";
+  async function registerUser() {
+    const name       = document.getElementById('name').value.trim();
+    const email      = document.getElementById('email').value.trim();
+    const birthDate  = document.getElementById('birthDate').value.trim();
+    const birthTime  = document.getElementById('birthTime').value.trim();
+    const birthPlace = document.getElementById('birthPlace').value.trim();
 
-    async function registerUser() {
-      const name       = document.getElementById('name').value.trim();
-      const email      = document.getElementById('email').value.trim();
-      const birthDate  = document.getElementById('birthDate').value.trim();
-      const birthTime  = document.getElementById('birthTime').value.trim();
-      const birthPlace = document.getElementById('birthPlace').value.trim();
-
-      if (!name || !email || !birthDate || !birthTime || !birthPlace) {
-        alert("Please fill all required fields!");
-        return;
-      }
-
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = "Registering... Please wait.";
-
-      try {
-        const response = await fetch(`${API_URL}/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, birthDate, birthTime, birthPlace })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          resultDiv.innerHTML = `Error: ${errorData.error || 'Unknown server error'}`;
-          return;
-        }
-
-        const data = await response.json();
-
-        resultDiv.innerHTML = `
-          <strong>Success!</strong><br>
-          User ID: <strong>${data.id}</strong><br>
-          Signs: Sun=${data.signs.sun}, Moon=${data.signs.moon}, Rising=${data.signs.rising}<br>
-          <br>Copy your User ID above to find matches!
-        `;
-      } catch (err) {
-        resultDiv.innerHTML = `Network error: ${err.message}<br>(The API may be waking up — try again in 10–20 seconds)`;
-      }
+    if (!name || !email || !birthDate || !birthTime || !birthPlace) {
+      alert("Please fill all required fields!");
+      return;
     }
 
-    async function getMatches() {
-      const userId = document.getElementById('userId').value.trim();
-      if (!userId) {
-        alert("Enter your User ID!");
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = "Registering... (API may take 10–30 seconds to wake up)";
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, birthDate, birthTime, birthPlace }),
+        mode: 'cors',
+        cache: 'no-cache',
+        redirect: 'follow'
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        resultDiv.innerHTML = "Error: Server returned invalid JSON";
         return;
       }
 
-      const matchesDiv = document.getElementById('matches');
-      matchesDiv.innerHTML = "Loading matches...";
+      if (response.ok) {
+        const signs = data.signs || {};
+        resultDiv.innerHTML = `
+          <strong>Success!</strong><br>
+          User ID: <strong>${data.id || 'Unknown'}</strong><br>
+          Signs: Sun=${signs.sun || 'Unknown'}, Moon=${signs.moon || 'Unknown'}, Rising=${signs.rising || 'Unknown'}<br>
+          <br>Copy your User ID to find matches!
+        `;
+      } else {
+        resultDiv.innerHTML = `Error: ${data.error || 'Unknown server error'} (Status ${response.status})`;
+      }
+    } catch (err) {
+      resultDiv.innerHTML = `Network error: ${err.message}<br>Try again in 15–30 seconds (Render may be sleeping)`;
+    }
+  }
 
+  async function getMatches() {
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) {
+      alert("Enter your User ID!");
+      return;
+    }
+
+    const matchesDiv = document.getElementById('matches');
+    matchesDiv.innerHTML = "Loading matches...";
+
+    try {
+      const response = await fetch(`${API_URL}/match/${userId}`, {
+        mode: 'cors',
+        cache: 'no-cache'
+      });
+
+      let data;
       try {
-        const response = await fetch(`${API_URL}/match/${userId}`);
+        data = await response.json();
+      } catch {
+        matchesDiv.innerHTML = "Error: Server returned invalid JSON";
+        return;
+      }
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          matchesDiv.innerHTML = `Error: ${errorData.error || 'User not found'}`;
-          return;
-        }
-
-        const data = await response.json();
-
+      if (response.ok) {
         if (data.matches.length === 0) {
           matchesDiv.innerHTML = "<strong>No matches yet</strong><br>Register more users to see compatibility!";
         } else {
           let html = "<strong>Your Matches:</strong><ul>";
           data.matches.forEach(m => {
-            html += `<li>${m.name} - <strong>${m.label}</strong> (${m.score}%)</li>`;
+            html += `<li>${m.name} - Compatibility: ${m.score}%</li>`;
           });
           html += "</ul>";
           matchesDiv.innerHTML = html;
         }
-      } catch (err) {
-        matchesDiv.innerHTML = `Network error: ${err.message}`;
+      } else {
+        matchesDiv.innerHTML = `Error: ${data.error || 'Unknown error'} (Status ${response.status})`;
       }
+    } catch (err) {
+      matchesDiv.innerHTML = `Network error: ${err.message}`;
     }
-  </script>
-</body>
+  }
+</script>
+  </body>
 </html>
